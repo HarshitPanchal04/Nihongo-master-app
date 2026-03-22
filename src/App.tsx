@@ -8,7 +8,7 @@ import { Listening } from './components/Listening';
 import { Login } from './components/Login';
 import { Lessons } from './components/Lessons';
 import { View } from './types';
-import { Bell, Menu, LogOut, Sun, Moon, Camera, LayoutDashboard, BookOpen, HelpCircle, Trophy } from 'lucide-react';
+import { Bell, Menu, LogOut, Sun, Moon, Camera, LayoutDashboard, BookOpen, HelpCircle, Trophy, PenTool } from 'lucide-react';
 import { auth, signInWithGoogle, logOut, db } from './firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { doc, setDoc, getDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
@@ -175,9 +175,6 @@ export default function App() {
           {/* Header */}
           <header className="sticky top-0 z-10 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md px-6 py-4 flex items-center justify-between border-b border-primary/5 dark:border-dark-border">
             <div className="flex items-center gap-4">
-              <div className="md:hidden text-primary">
-                <Menu size={24} />
-              </div>
               <div>
                 <h2 className="text-lg sm:text-2xl font-bold tracking-tight dark:text-white break-all">Konnichiwa, {user.displayName?.split(' ')[0]}! 👋</h2>
                 <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm hidden sm:block">Welcome back to your N5 study session.</p>
@@ -342,6 +339,10 @@ export default function App() {
           <button onClick={() => handleViewChange('lessons')} className={`flex flex-col items-center gap-1 ${currentView === 'lessons' ? 'text-primary' : 'text-slate-400'}`}>
             <BookOpen size={20} className={currentView === 'lessons' ? 'fill-primary/20' : ''} />
             <span className="text-[10px] font-bold">Lessons</span>
+          </button>
+          <button onClick={() => handleViewChange('writing')} className={`flex flex-col items-center gap-1 ${currentView === 'writing' ? 'text-primary' : 'text-slate-400'}`}>
+            <PenTool size={20} className={currentView === 'writing' ? 'fill-primary/20' : ''} />
+            <span className="text-[10px] font-bold">Write</span>
           </button>
           <button onClick={() => handleViewChange('quiz')} className={`flex flex-col items-center gap-1 ${currentView === 'quiz' ? 'text-primary' : 'text-slate-400'}`}>
             <HelpCircle size={20} className={currentView === 'quiz' ? 'fill-primary/20' : ''} />
