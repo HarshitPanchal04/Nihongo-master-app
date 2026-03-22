@@ -1,7 +1,7 @@
 {
   "projectId": "gen-lang-client-0453254939",
   "appId": "1:623025321700:web:0f96c841566fd7b41d1ef1",
-  "apiKey": "AIzaSyCogvFCDHzydwQlLR7lrXGIcRwN9kaFbsc",
+  "apiKey": "YOUR_FIREBASE_API_KEY_HERE",
   "authDomain": "gen-lang-client-0453254939.firebaseapp.com",
   "firestoreDatabaseId": "ai-studio-ec2103bf-d21f-4d0d-b6e0-3a40cebe9157",
   "storageBucket": "gen-lang-client-0453254939.firebasestorage.app",
