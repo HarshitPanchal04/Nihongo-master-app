@@ -5,9 +5,10 @@ import {
   EyeOff, 
   Trash2, 
   CheckCircle, 
-  ArrowLeft, 
+  ArrowLeft,
   ArrowRight 
 } from 'lucide-react';
+import { useUserProgress } from '../contexts/UserProgressContext';
 
 const KANJI_DATA = [
   { char: '山', romaji: 'Yama', meaning: 'Mountain', strokes: 3, hints: ['1', '2', '3'], positions: [{t:'25%', l:'48%'}, {t:'45%', l:'22%'}, {t:'45%', l:'75%'}] },
@@ -21,6 +22,11 @@ export const Writing: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [showGuide, setShowGuide] = useState(true);
+  const [strokeCount, setStrokeCount] = useState(0);
+  const [feedback, setFeedback] = useState<{status: 'success' | 'error' | 'idle', message: string}>({status: 'idle', message: ''});
+  const [hasAwardedXp, setHasAwardedXp] = useState(false);
+  const { addXp } = useUserProgress();
+  
   const currentKanji = KANJI_DATA[currentIndex];
 
   useEffect(() => {
@@ -37,10 +43,14 @@ export const Writing: React.FC = () => {
     
     // Reset canvas on kanji change
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setStrokeCount(0);
+    setFeedback({status: 'idle', message: ''});
   }, [currentIndex]);
 
   const startDrawing = (e: React.MouseEvent | React.TouchEvent) => {
     setIsDrawing(true);
+    setFeedback({status: 'idle', message: ''}); // clear feedback when they retry
+    
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -62,6 +72,9 @@ export const Writing: React.FC = () => {
   };
 
   const stopDrawing = () => {
+    if (isDrawing) {
+      setStrokeCount(prev => prev + 1);
+    }
     setIsDrawing(false);
   };
 
@@ -93,17 +106,52 @@ export const Writing: React.FC = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setStrokeCount(0);
+    setFeedback({status: 'idle', message: ''});
+  };
+
+  const playKanaAudio = () => {
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(currentKanji.char);
+    u.lang = 'ja-JP';
+    u.rate = 0.8;
+    window.speechSynthesis.speak(u);
+  };
+
+  const checkAnswer = () => {
+    if (strokeCount === currentKanji.strokes) {
+      setFeedback({
+        status: 'success', 
+        message: '✨ Perfect! Correct number of strokes. (+10 XP)'
+      });
+      if (!hasAwardedXp) {
+        addXp(10);
+        setHasAwardedXp(true);
+      }
+    } else if (strokeCount === 0) {
+      setFeedback({
+        status: 'error', 
+        message: 'Write the character first!'
+      });
+    } else {
+      setFeedback({
+        status: 'error', 
+        message: `❌ You drew ${strokeCount} strokes, but this character requires ${currentKanji.strokes} strokes.`
+      });
+    }
   };
 
   const nextKanji = () => {
     if (currentIndex < KANJI_DATA.length - 1) {
       setCurrentIndex(currentIndex + 1);
+      setHasAwardedXp(false);
     }
   };
 
   const prevKanji = () => {
     if (currentIndex > 0) {
       setCurrentIndex(currentIndex - 1);
+      setHasAwardedXp(false);
     }
   };
 
@@ -122,7 +170,10 @@ export const Writing: React.FC = () => {
         </div>
         <div className="flex gap-4">
           <div className="flex flex-col items-center gap-1">
-            <button className="size-12 rounded-2xl border-2 border-primary/10 flex items-center justify-center text-primary bg-white hover:bg-primary hover:text-white transition-all shadow-sm">
+            <button 
+              onClick={playKanaAudio}
+              className="size-12 rounded-2xl border-2 border-primary/10 flex items-center justify-center text-primary bg-white hover:bg-primary hover:text-white transition-all shadow-sm"
+            >
               <Volume2 size={24} />
             </button>
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Listen</span>
@@ -173,6 +224,12 @@ export const Writing: React.FC = () => {
         />
       </div>
 
+      {feedback.status !== 'idle' && (
+        <div className={`mt-6 p-4 w-full max-w-[500px] rounded-xl border text-center font-bold ${feedback.status === 'success' ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'}`}>
+          {feedback.message}
+        </div>
+      )}
+
       <div className="w-full max-w-[500px] flex gap-4 mt-8">
         <button 
           onClick={clearCanvas}
@@ -181,7 +238,10 @@ export const Writing: React.FC = () => {
           <Trash2 size={20} />
           Clear
         </button>
-        <button className="flex-[2] flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white font-bold py-4 rounded-2xl shadow-lg shadow-primary/20 transition-all transform active:scale-95">
+        <button 
+          onClick={checkAnswer}
+          className="flex-[2] flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white font-bold py-4 rounded-2xl shadow-lg shadow-primary/20 transition-all transform active:scale-95"
+        >
           <CheckCircle size={20} />
           Check Answer
         </button>

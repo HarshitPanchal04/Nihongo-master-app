@@ -8,10 +8,10 @@ import { Listening } from './components/Listening';
 import { Login } from './components/Login';
 import { Lessons } from './components/Lessons';
 import { View } from './types';
-import { Bell, Menu, LogOut, Sun, Moon } from 'lucide-react';
+import { Bell, Menu, LogOut, Sun, Moon, Camera } from 'lucide-react';
 import { auth, signInWithGoogle, logOut, db } from './firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Cursor } from './components/Cursor';
 
@@ -23,6 +23,15 @@ export default function App() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [newUsername, setNewUsername] = useState('');
   const [isEditingUsername, setIsEditingUsername] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [notifications, setNotifications] = useState([
+    { id: 1, title: '🔥 Daily Streak!', message: "You're on a 5-day streak. Keep it up!", time: '2 mins ago', read: false },
+    { id: 2, title: '📚 New Lesson', message: 'JLPT N5 Grammar Lesson 4 is now available.', time: '1 hour ago', read: false },
+    { id: 3, title: '🏆 Weekly Leaderboard', message: 'You ranked #3 this week! Great job.', time: '5 hours ago', read: false },
+    { id: 4, title: '⏰ Practice Reminder', message: 'It\'s time for your daily writing practice.', time: '1 day ago', read: false },
+    { id: 5, title: '⭐ Achievement Unlocked', message: 'Mastered 50 Hiragana characters!', time: '2 days ago', read: true },
+  ]);
+  const unreadCount = notifications.filter(n => !n.read).length;
 
   useEffect(() => {
     // Check local storage for theme
@@ -99,13 +108,19 @@ export default function App() {
     }
   };
 
-  const handleUpdateUsername = () => {
+  const handleUpdateUsername = async () => {
     if (newUsername.trim() && user) {
       setUser({
         ...user,
         displayName: newUsername.trim()
       } as User);
       setIsEditingUsername(false);
+      
+      try {
+        await updateDoc(doc(db, 'users', user.uid), { displayName: newUsername.trim() });
+      } catch (err) {
+        console.error("Failed to update display name", err);
+      }
       setNewUsername('');
     }
   };
@@ -177,13 +192,64 @@ export default function App() {
                 {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
               </button>
               
-              <button className="p-2 rounded-full bg-white dark:bg-dark-surface border border-primary/10 dark:border-dark-border text-slate-600 dark:text-slate-300 relative">
-                <Bell size={20} />
-                <span className="absolute top-2 right-2.5 w-2 h-2 bg-primary rounded-full"></span>
-              </button>
               <div className="relative">
                 <button 
-                  onClick={() => setIsProfileOpen(!isProfileOpen)}
+                  onClick={() => {
+                    setIsNotificationsOpen(!isNotificationsOpen);
+                    setIsProfileOpen(false); // Close profile if open
+                  }}
+                  className="p-2 rounded-full bg-white dark:bg-dark-surface border border-primary/10 dark:border-dark-border text-slate-600 dark:text-slate-300 relative hover:text-primary dark:hover:text-primary transition-colors cursor-pointer"
+                >
+                  <Bell size={20} />
+                  {unreadCount > 0 && (
+                    <span className="absolute top-2 right-2.5 w-2 h-2 bg-primary rounded-full"></span>
+                  )}
+                </button>
+                {isNotificationsOpen && (
+                  <div className="absolute top-14 -right-10 md:right-0 w-80 bg-white dark:bg-dark-surface border border-primary/10 dark:border-dark-border rounded-xl shadow-xl flex flex-col z-50 overflow-hidden">
+                    <div className="px-4 py-3 border-b border-primary/5 dark:border-dark-border flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
+                      <h3 className="font-bold text-slate-800 dark:text-white text-sm">Notifications {unreadCount > 0 && `(${unreadCount})`}</h3>
+                      {unreadCount > 0 && (
+                        <button 
+                          onClick={() => setNotifications(notifications.map(n => ({...n, read: true})))}
+                          className="text-xs text-primary font-semibold hover:underline"
+                        >
+                          Mark all as read
+                        </button>
+                      )}
+                    </div>
+                    <div className="max-h-80 overflow-y-auto">
+                      {notifications.length === 0 ? (
+                        <div className="p-4 text-center text-slate-500 dark:text-slate-400 text-sm">No notifications</div>
+                      ) : (
+                        notifications.map(notification => (
+                          <div 
+                            key={notification.id} 
+                            className={`p-4 border-b border-primary/5 dark:border-dark-border hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer ${!notification.read ? 'bg-primary/5 dark:bg-primary/10' : ''}`}
+                            onClick={() => setNotifications(notifications.map(n => n.id === notification.id ? {...n, read: true} : n))}
+                          >
+                            <div className="flex justify-between items-start mb-1">
+                              <h4 className={`text-sm font-semibold ${!notification.read ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300'}`}>
+                                {notification.title}
+                              </h4>
+                              <span className="text-[10px] text-slate-400 whitespace-nowrap ml-2">{notification.time}</span>
+                            </div>
+                            <p className={`text-xs mt-1 ${!notification.read ? 'text-slate-700 dark:text-slate-300' : 'text-slate-500 dark:text-slate-400'}`}>
+                              {notification.message}
+                            </p>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="relative">
+                <button 
+                  onClick={() => {
+                    setIsProfileOpen(!isProfileOpen);
+                    setIsNotificationsOpen(false); // Close notifications if open
+                  }}
                   className="h-10 w-10 rounded-full bg-primary flex items-center justify-center text-white font-bold border-2 border-white dark:border-dark-surface shadow-sm overflow-hidden hover:ring-2 hover:ring-primary/50 transition-all cursor-pointer"
                 >
                   <img 
@@ -213,12 +279,43 @@ export default function App() {
                           </div>
                         </div>
                       ) : (
-                        <div className="flex justify-between items-start">
-                          <div className="flex flex-col">
-                            <span className="font-bold text-slate-900 dark:text-white text-sm">{user.displayName}</span>
-                            <span className="text-xs text-slate-500 dark:text-slate-400 break-all">{user.email}</span>
+                        <div className="flex flex-col gap-2">
+                          <div className="flex justify-between items-start">
+                            <div className="flex flex-col">
+                              <span className="font-bold text-slate-900 dark:text-white text-sm">{user.displayName}</span>
+                              <span className="text-xs text-slate-500 dark:text-slate-400 break-all">{user.email}</span>
+                            </div>
+                            <button onClick={() => { setIsEditingUsername(true); setNewUsername(user.displayName || ''); }} className="text-primary text-xs font-bold hover:underline">Edit</button>
                           </div>
-                          <button onClick={() => { setIsEditingUsername(true); setNewUsername(user.displayName || ''); }} className="text-primary text-xs font-bold hover:underline">Edit</button>
+                          
+                          <label htmlFor="avatar-upload" className="flex items-center gap-1 text-slate-600 dark:text-slate-300 text-xs font-bold hover:text-primary dark:hover:text-primary transition-colors cursor-pointer w-fit mt-1 bg-slate-100 dark:bg-slate-800 px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-primary/50">
+                            <Camera size={14} /> Change Picture
+                          </label>
+                          <input 
+                            type="file" 
+                            id="avatar-upload" 
+                            className="hidden" 
+                            accept="image/*" 
+                            capture="user"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                const reader = new FileReader();
+                                reader.onloadend = async () => {
+                                  if (user) {
+                                    const photoData = reader.result as string;
+                                    setUser({ ...user, photoURL: photoData } as User);
+                                    try {
+                                      await updateDoc(doc(db, 'users', user.uid), { photoURL: photoData });
+                                    } catch (err) {
+                                      console.error("Failed to update photo", err);
+                                    }
+                                  }
+                                };
+                                reader.readAsDataURL(file);
+                              }
+                            }} 
+                          />
                         </div>
                       )}
                     </div>

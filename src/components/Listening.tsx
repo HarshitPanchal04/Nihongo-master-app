@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Headphones, 
   TrainFront, 
@@ -6,28 +6,33 @@ import {
   RotateCw, 
   Pause, 
   Play, 
-  ChevronUp, 
+  ChevronUp,
   FileText, 
   HelpCircle, 
-  CheckCircle, 
+  CheckCircle,
   Flag 
 } from 'lucide-react';
+import { useUserProgress } from '../contexts/UserProgressContext';
 
 export const Listening: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState(false);
-  const [progress, setProgress] = useState(45);
+  const [progress, setProgress] = useState(0);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [showTranscript, setShowTranscript] = useState(false);
+  const [duration, setDuration] = useState(15); // Estimated duration in seconds
+  const [hasSubmitted, setHasSubmitted] = useState(false);
+  const { addXp } = useUserProgress();
+  
+  const synthRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const animationRef = useRef<number | null>(null);
+  const startTimeRef = useRef<number | null>(null);
+  const pausedAtRef = useRef<number>(0);
 
-  useEffect(() => {
-    let interval: any;
-    if (isPlaying) {
-      interval = setInterval(() => {
-        setProgress((prev) => (prev >= 100 ? 0 : prev + 0.5));
-      }, 100);
-    }
-    return () => clearInterval(interval);
-  }, [isPlaying]);
+  const dialogue = [
+    { speaker: 'A', text: 'すみません、しんじゅくえきはどこですか。', lang: 'ja-JP' },
+    { pause: 1000 },
+    { speaker: 'B', text: 'まっすぐ行って、右にまがってください。', lang: 'ja-JP' }
+  ];
 
   const questions = [
     {
@@ -42,6 +47,107 @@ export const Listening: React.FC = () => {
       correct: 1
     }
   ];
+
+  useEffect(() => {
+    return () => {
+      window.speechSynthesis.cancel();
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+    };
+  }, []);
+
+  const updateProgress = () => {
+    if (!startTimeRef.current) return;
+    const elapsed = Date.now() - startTimeRef.current + pausedAtRef.current;
+    let newProgress = (elapsed / (duration * 1000)) * 100;
+    
+    if (newProgress >= 100) {
+      newProgress = 100;
+      setIsPlaying(false);
+      pausedAtRef.current = 0;
+      startTimeRef.current = null;
+    } else {
+      animationRef.current = requestAnimationFrame(updateProgress);
+    }
+    setProgress(newProgress);
+  };
+
+  const playDialogue = async () => {
+    window.speechSynthesis.cancel();
+    setIsPlaying(true);
+    
+    if (!startTimeRef.current) {
+        startTimeRef.current = Date.now();
+        if (pausedAtRef.current === 0) setProgress(0);
+        animationRef.current = requestAnimationFrame(updateProgress);
+    }
+
+    const speakSequence = async () => {
+      for (const line of dialogue) {
+        if (!isPlaying && pausedAtRef.current > 0) return; // Means we paused
+        if ('pause' in line) {
+            await new Promise(r => setTimeout(r, line.pause));
+            continue;
+        }
+
+        await new Promise<void>((resolve, reject) => {
+          const u = new SpeechSynthesisUtterance(line.text);
+          u.lang = line.lang as string;
+          u.rate = 0.8; // Speak slightly slower for learners
+          
+          u.onend = () => resolve();
+          u.onerror = (e) => resolve(); // Handle error gracefully
+          
+          const voices = window.speechSynthesis.getVoices();
+          const jpVoice = voices.find(v => v.lang === 'ja-JP' && (line.speaker === 'A' ? v.name.includes('Female') : v.name.includes('Male')));
+          if (jpVoice) u.voice = jpVoice;
+          else {
+              const fallback = voices.find(v => v.lang === 'ja-JP');
+              if (fallback) u.voice = fallback;
+          }
+
+          synthRef.current = u;
+          window.speechSynthesis.speak(u);
+        });
+      }
+      setIsPlaying(false);
+      setProgress(100);
+      pausedAtRef.current = 0;
+      startTimeRef.current = null;
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+    };
+
+    speakSequence();
+  };
+
+  const handlePlayPause = () => {
+    if (isPlaying) {
+      window.speechSynthesis.pause();
+      setIsPlaying(false);
+      if (startTimeRef.current) {
+         pausedAtRef.current += Date.now() - startTimeRef.current;
+         startTimeRef.current = null;
+      }
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+    } else {
+      if (pausedAtRef.current > 0) {
+        window.speechSynthesis.resume();
+        startTimeRef.current = Date.now();
+        setIsPlaying(true);
+        animationRef.current = requestAnimationFrame(updateProgress);
+      } else {
+        playDialogue();
+      }
+    }
+  };
+
+  const resetPlayback = () => {
+    window.speechSynthesis.cancel();
+    setIsPlaying(false);
+    setProgress(0);
+    pausedAtRef.current = 0;
+    startTimeRef.current = null;
+    if (animationRef.current) cancelAnimationFrame(animationRef.current);
+  };
 
   return (
     <div className="max-w-[960px] mx-auto w-full px-4 py-8 flex flex-col gap-8">
@@ -78,7 +184,7 @@ export const Listening: React.FC = () => {
                 <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-500 text-[10px] font-black uppercase tracking-widest">N5 Difficulty</span>
               </div>
               <h3 className="text-2xl font-black text-slate-900 leading-tight">Directions to Shinjuku</h3>
-              <p className="text-slate-400 font-bold text-sm mt-1 uppercase tracking-tight">Topic: Transportation • Duration: 2:15</p>
+              <p className="text-slate-400 font-bold text-sm mt-1 uppercase tracking-tight">Topic: Transportation • Duration: ~0:15</p>
             </div>
             
             <div className="space-y-3">
@@ -89,22 +195,22 @@ export const Listening: React.FC = () => {
                 ></div>
               </div>
               <div className="flex justify-between text-xs font-black text-slate-400 tracking-tighter">
-                <span>{Math.floor((progress / 100) * 135 / 60)}:{String(Math.floor((progress / 100) * 135 % 60)).padStart(2, '0')}</span>
-                <span>2:15</span>
+                <span>0:{String(Math.floor((progress / 100) * duration)).padStart(2, '0')}</span>
+                <span>0:{duration}</span>
               </div>
             </div>
 
             <div className="flex items-center justify-center md:justify-start gap-8">
-              <button className="text-slate-300 hover:text-primary transition-all hover:scale-110 active:scale-90">
+              <button onClick={resetPlayback} className="text-slate-300 hover:text-primary transition-all hover:scale-110 active:scale-90">
                 <RotateCcw size={30} />
               </button>
               <button 
-                onClick={() => setIsPlaying(!isPlaying)}
+                onClick={handlePlayPause}
                 className="h-20 w-20 bg-primary text-white rounded-[28px] flex items-center justify-center hover:scale-105 transition-all shadow-2xl shadow-primary/40 active:scale-95 group"
               >
                 {isPlaying ? <Pause size={48} fill="currentColor" /> : <Play size={48} fill="currentColor" />}
               </button>
-              <button className="text-slate-300 hover:text-primary transition-all hover:scale-110 active:scale-90">
+              <button onClick={resetPlayback} className="text-slate-300 hover:text-primary transition-all hover:scale-110 active:scale-90">
                 <RotateCw size={30} />
               </button>
             </div>
@@ -178,6 +284,18 @@ export const Listening: React.FC = () => {
                   </button>
                 ))}
               </div>
+              {hasSubmitted && selectedOption !== null && (
+                <div className={`mt-4 p-4 rounded-xl border ${selectedOption === q.correct ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'}`}>
+                  <p className="font-bold flex items-center gap-2">
+                    {selectedOption === q.correct ? '✨ Correct! (+20 XP)' : '❌ Incorrect'}
+                  </p>
+                  <p className="text-sm mt-1">
+                    {selectedOption === q.correct 
+                      ? 'The dialogue says "shinjuku eki wa doko desu ka" (Where is Shinjuku station).' 
+                      : 'Listen again to where the speaker is asking to go.'}
+                  </p>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -187,7 +305,7 @@ export const Listening: React.FC = () => {
         <div className="flex items-center gap-6 px-4">
           <div className="hidden sm:block">
             <p className="text-[10px] text-slate-500 uppercase tracking-widest font-black">Progress</p>
-            <p className="text-sm font-black text-white">1 of 3 Completed</p>
+            <p className="text-sm font-black text-white">1 of 1 Completed</p>
           </div>
           <div className="h-10 w-px bg-white/10 hidden sm:block"></div>
           <button className="flex items-center gap-2 text-slate-400 hover:text-white font-black text-xs uppercase tracking-widest transition-colors">
@@ -200,9 +318,15 @@ export const Listening: React.FC = () => {
             Save
           </button>
           <button 
-            disabled={selectedOption === null}
+            disabled={selectedOption === null || hasSubmitted}
+            onClick={() => {
+                setHasSubmitted(true);
+                if (selectedOption === questions[0].correct) {
+                    addXp(20);
+                }
+            }}
             className={`px-10 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-xl active:scale-95 ${
-              selectedOption === null 
+              (selectedOption === null || hasSubmitted)
                 ? 'bg-slate-800 text-slate-500 cursor-not-allowed' 
                 : 'bg-primary text-white hover:bg-primary/90 shadow-primary/20'
             }`}

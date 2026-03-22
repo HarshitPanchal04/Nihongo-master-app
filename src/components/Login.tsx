@@ -67,25 +67,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
             </button>
           </form>
 
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-200"></div>
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white px-2 text-slate-400">Or continue with</span>
-            </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <button className="flex items-center justify-center gap-2 py-3 px-4 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">
-              <img src="https://www.google.com/favicon.ico" className="w-5 h-5" alt="Google" />
-              <span className="text-sm font-medium">Google</span>
-            </button>
-            <button className="flex items-center justify-center gap-2 py-3 px-4 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">
-              <Apple size={20} className="text-slate-900" />
-              <span className="text-sm font-medium">Apple</span>
-            </button>
-          </div>
 
           <div className="text-center">
             <p className="text-slate-500 text-sm">

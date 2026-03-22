@@ -1,11 +1,51 @@
-import React, { useState } from 'react';
-import { LEADERBOARD_DATA } from '../constants';
+import React, { useState, useEffect } from 'react';
 import { Award, TrendingUp } from 'lucide-react';
+import { LeaderboardEntry } from '../types';
+import { db, auth } from '../firebase';
+import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 
 export const Leaderboard: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'weekly' | 'all-time' | 'friends'>('weekly');
-  const top3 = LEADERBOARD_DATA.slice(0, 3);
-  const others = LEADERBOARD_DATA.slice(3);
+  const [activeTab, setActiveTab] = useState<'weekly' | 'all-time' | 'friends'>('all-time');
+  const [leaderboardData, setLeaderboardData] = useState<LeaderboardEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchLeaderboard = async () => {
+      try {
+        const q = query(collection(db, 'users'), orderBy('progress.xp', 'desc'), limit(100));
+        const snap = await getDocs(q);
+        const data = snap.docs.map((d, index) => {
+          const ud = d.data();
+          return {
+            rank: index + 1,
+            name: ud.displayName?.split(' ')[0] || 'Unknown User',
+            avatar: ud.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${d.id}`,
+            level: ud.progress?.level || 1,
+            title: ud.progress?.rank || 'Newcomer',
+            xp: ud.progress?.xp || 0,
+            isCurrentUser: d.id === auth.currentUser?.uid
+          };
+        });
+        setLeaderboardData(data);
+      } catch (err) {
+        console.error("Failed to fetch leaderboard", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchLeaderboard();
+  }, []);
+
+  const top3 = leaderboardData.slice(0, 3);
+  const others = leaderboardData.slice(3);
+
+  if (loading) {
+     return <div className="p-12 text-center text-slate-500 font-bold animate-pulse">Loading Rankings...</div>;
+  }
+
+  if (leaderboardData.length === 0) {
+      return <div className="p-12 text-center text-slate-500 font-bold">No data available yet!</div>;
+  }
 
   return (
     <div className="max-w-[960px] mx-auto w-full px-4 py-6 flex flex-col gap-6">
@@ -28,6 +68,7 @@ export const Leaderboard: React.FC = () => {
       {/* Podium */}
       <div className="grid grid-cols-3 gap-4 items-end pt-12 pb-6 relative">
         {/* 2nd Place */}
+        {top3[1] && (
         <div className="flex flex-col items-center gap-3">
           <div className="relative">
             <div 
@@ -41,8 +82,10 @@ export const Leaderboard: React.FC = () => {
             <p className="text-xs text-primary font-black">{top3[1].xp.toLocaleString()} XP</p>
           </div>
         </div>
+        )}
 
         {/* 1st Place */}
+        {top3[0] && (
         <div className="flex flex-col items-center gap-4 -translate-y-6">
           <div className="relative">
             <div className="absolute -top-10 left-1/2 -translate-x-1/2 animate-bounce">
@@ -59,8 +102,10 @@ export const Leaderboard: React.FC = () => {
             <p className="text-sm text-primary font-black">{top3[0].xp.toLocaleString()} XP</p>
           </div>
         </div>
+        )}
 
         {/* 3rd Place */}
+        {top3[2] && (
         <div className="flex flex-col items-center gap-3">
           <div className="relative">
             <div 
@@ -74,6 +119,7 @@ export const Leaderboard: React.FC = () => {
             <p className="text-xs text-primary font-black">{top3[2].xp.toLocaleString()} XP</p>
           </div>
         </div>
+        )}
       </div>
 
       {/* Rankings List */}

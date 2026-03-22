@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { DAILY_TARGETS, WORD_OF_THE_DAY, MOCK_USER } from '../constants';
+import { DAILY_TARGETS, WORD_OF_THE_DAY } from '../constants';
 import { View } from '../types';
+import { useUserProgress } from '../contexts/UserProgressContext';
 import { 
   PlayCircle, 
   BookOpen, 
@@ -27,6 +28,7 @@ interface DashboardProps {
 
 export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
   const [activeLesson, setActiveLesson] = useState(false);
+  const { progress } = useUserProgress();
 
   const getDailyTargetIcon = (iconName: string) => {
     switch (iconName) {
@@ -59,13 +61,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
           <p className="text-white/80 mb-6 font-light leading-relaxed">
             Learn how to ask "How much is this?" and handle basic transactions in Japanese.
           </p>
-          <button 
-            onClick={() => setActiveLesson(true)}
-            className="bg-white text-primary px-8 py-3 rounded-xl font-bold hover:bg-slate-50 transition-all flex items-center gap-2 shadow-lg"
-          >
-            Continue Learning
-            <PlayCircle size={20} />
-          </button>
+          <div className="flex gap-4 items-center">
+            <button 
+              onClick={() => setActiveLesson(true)}
+              className="bg-white text-primary px-8 py-3 rounded-xl font-bold hover:bg-slate-50 transition-all flex items-center gap-2 shadow-lg"
+            >
+              Continue Learning
+              <PlayCircle size={20} />
+            </button>
+            <div className="flex flex-col">
+               <span className="text-xs font-bold uppercase tracking-widest text-primary-200 opacity-80">Rank: {progress.rank}</span>
+               <span className="text-sm font-black">Level {progress.level} ({progress.xp} XP)</span>
+               <div className="w-32 h-1.5 bg-black/20 rounded-full mt-1 overflow-hidden">
+                 <div className="h-full bg-white rounded-full" style={{ width: `${(progress.xp % 100)}%` }}></div>
+               </div>
+            </div>
+          </div>
         </div>
         <div className="absolute right-0 bottom-0 opacity-10 transform translate-x-1/4 translate-y-1/4">
           <Book size={240} />
@@ -78,7 +89,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
           <h3 className="font-bold text-lg dark:text-white">Weekly Streak</h3>
           <div className="flex items-center gap-1 text-primary font-black">
             <Flame size={20} fill="currentColor" />
-            {MOCK_USER.streak} Days
+            {progress.streak} Days
           </div>
         </div>
         <div className="flex justify-between items-center gap-1">
