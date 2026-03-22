@@ -1,10 +1,10 @@
 {
-  "projectId": "gen-lang-client-0453254939",
-  "appId": "1:623025321700:web:0f96c841566fd7b41d1ef1",
-  "apiKey": "YOUR_FIREBASE_API_KEY_HERE",
-  "authDomain": "gen-lang-client-0453254939.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-ec2103bf-d21f-4d0d-b6e0-3a40cebe9157",
-  "storageBucket": "gen-lang-client-0453254939.firebasestorage.app",
-  "messagingSenderId": "623025321700",
-  "measurementId": ""
+  "projectId": "nihongo-master-51bad",
+  "appId": "1:629384607929:web:990f384a79594249044368",
+  "apiKey": "LOADED_FROM_ENV",
+  "authDomain": "nihongo-master-51bad.firebaseapp.com",
+  "firestoreDatabaseId": "(default)",
+  "storageBucket": "nihongo-master-51bad.firebasestorage.app",
+  "messagingSenderId": "629384607929",
+  "measurementId": "G-76JV6DTH7N"
 }
