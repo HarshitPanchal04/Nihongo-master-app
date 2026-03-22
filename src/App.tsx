@@ -8,7 +8,7 @@ import { Listening } from './components/Listening';
 import { Login } from './components/Login';
 import { Lessons } from './components/Lessons';
 import { View } from './types';
-import { Bell, Menu, LogOut, Sun, Moon, Camera } from 'lucide-react';
+import { Bell, Menu, LogOut, Sun, Moon, Camera, LayoutDashboard, BookOpen, HelpCircle, Trophy } from 'lucide-react';
 import { auth, signInWithGoogle, logOut, db } from './firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { doc, setDoc, getDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
@@ -179,8 +179,8 @@ export default function App() {
                 <Menu size={24} />
               </div>
               <div>
-                <h2 className="text-2xl font-bold tracking-tight dark:text-white">Konnichiwa, {user.displayName?.split(' ')[0]}! 👋</h2>
-                <p className="text-slate-500 dark:text-slate-400 text-sm">Welcome back to your N5 study session.</p>
+                <h2 className="text-lg sm:text-2xl font-bold tracking-tight dark:text-white break-all">Konnichiwa, {user.displayName?.split(' ')[0]}! 👋</h2>
+                <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm hidden sm:block">Welcome back to your N5 study session.</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -328,8 +328,30 @@ export default function App() {
             </div>
           </header>
 
-          {renderView()}
+          <div className="pb-20 md:pb-0">
+            {renderView()}
+          </div>
         </main>
+        
+        {/* Mobile Bottom Navigation */}
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-dark-surface border-t border-primary/10 flex justify-around items-center p-3 pb-safe-area-inset-bottom z-50">
+          <button onClick={() => handleViewChange('dashboard')} className={`flex flex-col items-center gap-1 ${currentView === 'dashboard' ? 'text-primary' : 'text-slate-400'}`}>
+            <LayoutDashboard size={20} className={currentView === 'dashboard' ? 'fill-primary/20' : ''} />
+            <span className="text-[10px] font-bold">Home</span>
+          </button>
+          <button onClick={() => handleViewChange('lessons')} className={`flex flex-col items-center gap-1 ${currentView === 'lessons' ? 'text-primary' : 'text-slate-400'}`}>
+            <BookOpen size={20} className={currentView === 'lessons' ? 'fill-primary/20' : ''} />
+            <span className="text-[10px] font-bold">Lessons</span>
+          </button>
+          <button onClick={() => handleViewChange('quiz')} className={`flex flex-col items-center gap-1 ${currentView === 'quiz' ? 'text-primary' : 'text-slate-400'}`}>
+            <HelpCircle size={20} className={currentView === 'quiz' ? 'fill-primary/20' : ''} />
+            <span className="text-[10px] font-bold">Quiz</span>
+          </button>
+          <button onClick={() => handleViewChange('leaderboard')} className={`flex flex-col items-center gap-1 ${currentView === 'leaderboard' ? 'text-primary' : 'text-slate-400'}`}>
+            <Trophy size={20} className={currentView === 'leaderboard' ? 'fill-primary/20' : ''} />
+            <span className="text-[10px] font-bold">Rank</span>
+          </button>
+        </nav>
       </div>
     </ErrorBoundary>
   );

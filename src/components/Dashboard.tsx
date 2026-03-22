@@ -61,19 +61,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
           <p className="text-white/80 mb-6 font-light leading-relaxed">
             Learn how to ask "How much is this?" and handle basic transactions in Japanese.
           </p>
-          <div className="flex gap-4 items-center">
+          <div className="flex flex-col sm:flex-row gap-4 sm:items-center items-start">
             <button 
               onClick={() => setActiveLesson(true)}
-              className="bg-white text-primary px-8 py-3 rounded-xl font-bold hover:bg-slate-50 transition-all flex items-center gap-2 shadow-lg"
+              className="bg-white text-primary px-6 sm:px-8 py-3 rounded-xl font-bold hover:bg-slate-50 transition-all flex items-center justify-center gap-2 shadow-lg w-full sm:w-auto"
             >
               Continue Learning
               <PlayCircle size={20} />
             </button>
-            <div className="flex flex-col">
+            <div className="flex flex-col items-center sm:items-start w-full sm:w-auto mt-2 sm:mt-0">
                <span className="text-xs font-bold uppercase tracking-widest text-primary-200 opacity-80">Rank: {progress.rank}</span>
                <span className="text-sm font-black">Level {progress.level} ({progress.xp} XP)</span>
-               <div className="w-32 h-1.5 bg-black/20 rounded-full mt-1 overflow-hidden">
-                 <div className="h-full bg-white rounded-full" style={{ width: `${(progress.xp % 100)}%` }}></div>
+               <div className="w-full sm:w-32 h-1.5 bg-black/20 rounded-full mt-2 overflow-hidden">
+                 <div className="h-full bg-white rounded-full transition-all duration-500" style={{ width: `${(progress.xp % 100)}%` }}></div>
                </div>
             </div>
           </div>
@@ -92,18 +92,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
             {progress.streak} Days
           </div>
         </div>
-        <div className="flex justify-between items-center gap-1">
+        <div className="flex justify-between items-center gap-1 sm:gap-2 overflow-x-auto no-scrollbar pb-1">
           {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, i) => (
-            <div key={i} className="flex flex-col items-center gap-2">
+            <div key={i} className="flex flex-col items-center gap-1 sm:gap-2 min-w-fit flex-shrink-0">
               <span className="text-[10px] uppercase font-bold text-slate-400">{day}</span>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+              <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all ${
                 i < 4 ? 'bg-primary text-white shadow-md shadow-primary/20' : 
                 i === 4 ? 'bg-primary/10 dark:bg-primary/20 border-2 border-primary border-dashed text-primary' :
                 'bg-slate-100 dark:bg-slate-800 text-slate-300 dark:text-slate-600'
               }`}>
-                {i < 4 ? <Check size={14} /> : 
-                 i === 4 ? <Pencil size={14} className="animate-pulse" /> : 
-                 <Lock size={14} />}
+                {i < 4 ? <Check size={12} className="sm:w-3.5 sm:h-3.5" /> : 
+                 i === 4 ? <Pencil size={12} className="animate-pulse sm:w-3.5 sm:h-3.5" /> : 
+                 <Lock size={12} className="sm:w-3.5 sm:h-3.5" />}
               </div>
             </div>
           ))}
