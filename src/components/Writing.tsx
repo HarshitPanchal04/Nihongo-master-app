@@ -213,7 +213,7 @@ export const Writing: React.FC = () => {
           ref={canvasRef}
           width={500}
           height={500}
-          className="absolute inset-0 cursor-crosshair w-full h-full z-10"
+          className="absolute inset-0 cursor-crosshair w-full h-full z-10 touch-none"
           onMouseDown={startDrawing}
           onMouseUp={stopDrawing}
           onMouseMove={draw}

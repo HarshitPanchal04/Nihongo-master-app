@@ -9,7 +9,7 @@ import { Login } from './components/Login';
 import { Lessons } from './components/Lessons';
 import { View } from './types';
 import { Bell, Menu, LogOut, Sun, Moon, Camera, LayoutDashboard, BookOpen, HelpCircle, Trophy, PenTool } from 'lucide-react';
-import { auth, signInWithGoogle, logOut, db } from './firebase';
+import { auth, signInWithGoogle, logOut, db, signInWithEmail, signUpWithEmail } from './firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { doc, setDoc, getDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -79,13 +79,25 @@ export default function App() {
     }
   };
 
-  const handleLogin = async () => {
+  const handleLogin = async (email?: string, password?: string, isSignUp?: boolean) => {
     try {
-      await signInWithGoogle();
+      if (email && password) {
+        if (isSignUp) {
+          await signUpWithEmail(email, password);
+        } else {
+          await signInWithEmail(email, password);
+        }
+      } else {
+        await signInWithGoogle();
+      }
       setCurrentView('dashboard');
     } catch (error) {
-      console.error('Firebase login failed, falling back to mock user:', error);
-      // Create a mock user so the preview still works
+      console.error('Firebase login failed:', error);
+      if (email && password) {
+        // If email/password auth fails, throw error back to the form
+        throw error;
+      }
+      // If Google signin fails (or blocked), fallback to mock user
       setUser({
         uid: 'mock-user-123',
         displayName: 'Guest Learner',

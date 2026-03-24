@@ -22,6 +22,30 @@ import {
 import { HolographicCard } from './HolographicCard';
 import { LessonPlayer } from './LessonPlayer';
 
+const FlashcardItem: React.FC<{ card: any }> = ({ card }) => {
+  const [isFlipped, setIsFlipped] = useState(false);
+  return (
+    <div 
+      className="group perspective-1000 w-full h-48 cursor-pointer"
+      onClick={() => setIsFlipped(!isFlipped)}
+    >
+      <div className={`relative w-full h-full transition-transform duration-700 transform-style-3d rounded-2xl shadow-sm hover:shadow-xl hover:shadow-primary/10 ${isFlipped ? 'rotate-y-180' : 'group-hover:rotate-y-180'}`}>
+        {/* Front of Card */}
+        <div className="absolute inset-0 backface-hidden bg-white dark:bg-dark-surface rounded-2xl border border-primary/10 dark:border-dark-border flex flex-col items-center justify-center p-6">
+          <div className="absolute top-4 right-4 w-2 h-2 rounded-full bg-primary/20"></div>
+          <span className="text-5xl font-black text-slate-900 dark:text-white mb-3">{card.word}</span>
+          <span className="text-xs uppercase tracking-widest font-bold text-slate-300 dark:text-slate-600">Front</span>
+        </div>
+        {/* Back of Card */}
+        <div className="absolute inset-0 backface-hidden bg-primary dark:bg-primary rounded-2xl flex flex-col items-center justify-center p-6 rotate-y-180 border border-primary-dark">
+          <span className="text-2xl font-bold text-white mb-2 text-center leading-tight">{card.meaning}</span>
+          <span className="text-sm font-medium text-white/80 bg-black/20 px-3 py-1 rounded-full">{card.romaji}</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 interface DashboardProps {
   onViewChange: (view: View) => void;
 }
@@ -172,21 +196,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
             { word: '電車', romaji: 'densha', meaning: 'train' },
             { word: '友達', romaji: 'tomodachi', meaning: 'friend' },
           ].map((card, i) => (
-            <div key={i} className="group perspective-1000 w-full h-48 cursor-pointer">
-              <div className="relative w-full h-full transition-transform duration-700 transform-style-3d group-hover:rotate-y-180 rounded-2xl shadow-sm hover:shadow-xl hover:shadow-primary/10">
-                {/* Front of Card */}
-                <div className="absolute inset-0 backface-hidden bg-white dark:bg-dark-surface rounded-2xl border border-primary/10 dark:border-dark-border flex flex-col items-center justify-center p-6">
-                  <div className="absolute top-4 right-4 w-2 h-2 rounded-full bg-primary/20"></div>
-                  <span className="text-5xl font-black text-slate-900 dark:text-white mb-3">{card.word}</span>
-                  <span className="text-xs uppercase tracking-widest font-bold text-slate-300 dark:text-slate-600">Front</span>
-                </div>
-                {/* Back of Card */}
-                <div className="absolute inset-0 backface-hidden bg-primary dark:bg-primary rounded-2xl flex flex-col items-center justify-center p-6 rotate-y-180 border border-primary-dark">
-                  <span className="text-2xl font-bold text-white mb-2 text-center leading-tight">{card.meaning}</span>
-                  <span className="text-sm font-medium text-white/80 bg-black/20 px-3 py-1 rounded-full">{card.romaji}</span>
-                </div>
-              </div>
-            </div>
+            <FlashcardItem key={i} card={card} />
           ))}
         </div>
       </section>
